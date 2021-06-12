@@ -1407,8 +1407,13 @@ def starttls_sock_setup(conn):
     upon connecting after a number of retries.
 
     """
-    def readline(fd, maximum_bytes=4096):
+    def readline(fd, maximum_bytes=4096,max_lines=2):
         line = fd.readline(maximum_bytes).decode('ascii')
+        # some broken smtp servers send an extra empty line during negotiation.
+        if len(line) < 4:
+           if max_lines == 0:
+               raise SMTPConnectionCouldNotTestException
+           line = readline(fd, maximum_bytes=maximum_bytes, max_lines=max_lines - 1)
         return line
 
     conn.sock = None
